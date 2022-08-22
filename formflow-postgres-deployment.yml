@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        env:
+        - name: POSTGRES_DB
+          value: keycloak
+        - name: POSTGRES_PASSWORD
+          value: changeme
+        - name: POSTGRES_USER
+          value: admin
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        image: eydscasandbox.azurecr.io/bing/postgres:latest
+        imagePullPolicy: "IfNotPresent"
+        envFrom:
+            - configMapRef:
+                name: formflow-postgres-secret # Using the ConfigMap postgres-secret
+        ports:
+        - containerPort: 5432
+        resources: {}
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: postgres-data-vol
+      restartPolicy: Always
+      volumes:
+      - name: postgres-data-vol
+        persistentVolumeClaim:
+          claimName: postgres-data-pvc
+status: {}
+
