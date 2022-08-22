@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  labels:
+    app: keycloak
+spec:
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: keycloak
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  labels:
+    app: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      initContainers:
+      - name: init-postgres-keycloak-service
+        image: busybox
+        command: ['sh', '-c', 'until nslookup formflow-keycloak-postgres; do echo waiting for postgres-keycloak; sleep 2; done;']
+      restartPolicy: Always
+      containers:
+      - name: keycloak
+        image: eydscasandbox.azurecr.io/bing/formflow-ai-keycloak:v1
+        env:
+        - name: KEYCLOAK_USER
+          value: admin
+        - name: KEYCLOAK_PASSWORD
+          value: changeme
+        - name: DB_ADDR
+          value: formflow-keycloak-postgres
+        - name: DB_DATABASE
+          value: keycloak
+        - name: DB_PASSWORD
+          value: changeme
+        - name: DB_USER
+          value: admin
+        - name: DB_VENDOR
+          value: POSTGRES
+        ports:
+        - name: http
+          containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /auth/realms/master
+            port: 8080
+          initialDelaySeconds: 30

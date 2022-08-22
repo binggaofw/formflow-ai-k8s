@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: postgres
+  name: formflow-keycloak-postgres
+spec:
+  ports:
+  - name: ppgl
+    port: 5432
+    targetPort: 5432
+  selector:
+    app: postgres
+  type: ClusterIP
